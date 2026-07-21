@@ -19,8 +19,14 @@ class Monster {
     this.rotation = 0;
     this.visible = true;
 
-    /** Ancho del body en píxeles de diseño (ocupa el ancho de la ventana). */
-    this.displaySize = DESIGN_WIDTH;
+    /**
+     * Tamaño del body.
+     * displaySize = ancho dibujado en px de diseño.
+     * Subí este valor si el body se ve chico (ej. 1180, 1250).
+     * bodyOffsetY baja/sube el body (positivo = más abajo).
+     */
+    this.displaySize = DESIGN_WIDTH * 1.12;
+    this.bodyOffsetY = 40;
 
     /**
      * Layout relativo al body.
@@ -87,6 +93,15 @@ class Monster {
 
     /** 'wait' = boca abierta esperando; 'chew' = masticando tras comer. */
     this._eatingMode = null;
+
+    /** Tiempo global para oscilaciones continuas. */
+    this._animTime = 0;
+
+    /**
+     * Offsets de animación (no pisan scale/rotation de tweens de entrada).
+     * Se aplican solo en draw().
+     */
+    this._fx = { scale: 1, y: 0, rotation: 0 };
   }
 
   /**
@@ -94,12 +109,15 @@ class Monster {
    * @returns {{ x: number, y: number }}
    */
   getMouthPosition() {
+    const scaleMul = this.scale * this._fx.scale;
     return {
       x: this.x,
       y:
         this.y +
+        this.bodyOffsetY +
+        this._fx.y +
         (this._bodyDrawH * this.layout.mouthY + this.layout.faceOffsetY) *
-          this.scale,
+          scaleMul,
     };
   }
 
@@ -107,7 +125,7 @@ class Monster {
    * @returns {number}
    */
   getMouthAcceptRadius() {
-    return this._bodyDrawW * 0.22 * this.scale;
+    return this._bodyDrawW * 0.22 * this.scale * this._fx.scale;
   }
 
   /**
@@ -135,7 +153,6 @@ class Monster {
     this._pendingReaction = null;
     this._onExpressionComplete = null;
     this._eatingMode = 'wait';
-    this.rotation = 0;
     this.setState(MONSTER_STATES.EATING);
   }
 
@@ -175,10 +192,12 @@ class Monster {
    * @param {number} dt
    */
   update(dt) {
+    this._animTime += dt;
     const handler = this._handlers[this.state];
     if (handler && handler.update) {
       handler.update(dt);
     }
+    this._updateMotionFx();
   }
 
   draw() {
@@ -187,9 +206,9 @@ class Monster {
     }
 
     push();
-    translate(this.x, this.y);
-    rotate(this.rotation);
-    scale(this.scale);
+    translate(this.x, this.y + this.bodyOffsetY + this._fx.y);
+    rotate(this.rotation + this._fx.rotation);
+    scale(this.scale * this._fx.scale);
     drawingContext.globalAlpha = this.alpha;
     imageMode(CENTER);
 
@@ -205,6 +224,43 @@ class Monster {
   // ---------------------------------------------------------------------------
   // Updates
   // ---------------------------------------------------------------------------
+
+  /**
+   * Calcula oscilaciones visuales según estado.
+   * - Idle: pulso sutil de escala
+   * - Happy: bounce vertical + escala
+   * - Full/error: rotación sutil
+   */
+  _updateMotionFx() {
+    const pulse = 1 + Math.sin(this._animTime * 2.0) * 0.008;
+    let scaleFx = pulse;
+    let yFx = 0;
+    let rotFx = 0;
+
+    if (this.state === MONSTER_STATES.HAPPY) {
+      // Bounce alegre: sube/baja y late un poco más
+      const bounce = Math.sin(this._stateTimer * 11);
+      yFx = bounce * -22;
+      scaleFx = 1 + Math.abs(bounce) * 0.07;
+    } else if (
+      this.state === MONSTER_STATES.FULL ||
+      this.state === MONSTER_STATES.SAD
+    ) {
+      // Error / disgusto / triste: meneo de rotación sutil
+      rotFx = Math.sin(this._stateTimer * 14) * 0.06;
+      scaleFx = pulse;
+    } else if (
+      this.state === MONSTER_STATES.EATING &&
+      this._eatingMode === 'chew'
+    ) {
+      rotFx = Math.sin(this._stateTimer * 16) * 0.03;
+      scaleFx = pulse;
+    }
+
+    this._fx.scale = scaleFx;
+    this._fx.y = yFx;
+    this._fx.rotation = rotFx;
+  }
 
   _updateIdle(dt) {
     this._blinkTimer -= dt;
@@ -248,17 +304,14 @@ class Monster {
   _updateEating(dt) {
     // Esperando comida: boca abierta fija, sin avanzar de estado.
     if (this._eatingMode === 'wait') {
-      this.rotation = 0;
       return;
     }
 
     this._stateTimer += dt;
     this._chewFrame = Math.floor(this._stateTimer / 0.12);
-    this.rotation = Math.sin(this._stateTimer * 16) * 0.03;
 
     // 0–0.22s boca abierta, luego masticar hasta ~0.95s
     if (this._stateTimer >= 0.95) {
-      this.rotation = 0;
       this._eatingMode = null;
       const next = this._pendingReaction || MONSTER_STATES.IDLE;
       this._pendingReaction = null;
