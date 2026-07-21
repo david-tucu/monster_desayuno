@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+  <!-- Evitar caché durante el desarrollo -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <title>El desayuno no se toma vacaciones</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Contenedor del canvas p5.js -->
+  <main id="game-root"></main>
+
+  <!-- Librerías locales (sin CDN) -->
+  <script src="js/lib/p5.min.js"></script>
+  <script src="js/lib/p5.sound.min.js"></script>
+
+  <!-- Constantes y configuración -->
+  <script src="js/constants.js"></script>
+
+  <!-- Sistemas / managers -->
+  <script src="js/classes/AssetManager.js"></script>
+  <script src="js/classes/AudioManager.js"></script>
+  <script src="js/classes/TweenManager.js"></script>
+  <script src="js/classes/StateManager.js"></script>
+
+  <!-- Entidades de juego -->
+  <script src="js/classes/Button.js"></script>
+  <script src="js/classes/Food.js"></script>
+  <script src="js/classes/Monster.js"></script>
+
+  <!-- Estados -->
+  <script src="js/states/BaseState.js"></script>
+  <script src="js/states/IntroState.js"></script>
+  <script src="js/states/PlayState.js"></script>
+  <script src="js/states/EndState.js"></script>
+
+  <!-- Orquestador principal -->
+  <script src="js/classes/Game.js"></script>
+
+  <!-- Punto de entrada p5.js (solo preload / setup / draw + input) -->
+  <script src="sketch.js"></script>
+</body>
+</html>
