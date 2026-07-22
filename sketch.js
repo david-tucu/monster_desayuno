@@ -62,3 +62,16 @@ function touchMoved() {
   game.pointerDragged();
   return false;
 }
+
+/**
+ * Atajos de teclado (desarrollo / operador):
+ * F / ESC → pantalla completa
+ * R → reiniciar todo
+ */
+function keyPressed() {
+  if (game) {
+    game.handleKey(key, keyCode);
+  }
+  // Evita scroll u otros defaults del navegador con algunas teclas.
+  return false;
+}

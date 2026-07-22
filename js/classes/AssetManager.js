@@ -26,12 +26,17 @@ class AssetManager {
         // UI
         logo: 'assets/images/ui/logo.png',
         fondo: 'assets/images/ui/fondo.png',
-        btn_jugar: 'assets/images/ui/btn_jugar.png',
-        btn_volver: 'assets/images/ui/btn_volver.png',
+        mesa: 'assets/images/ui/mesa.png',
+        fondo_boton: 'assets/images/ui/fondo-boton.png',
+        btn_jugar: 'assets/images/ui/fondo-boton.png',
+        btn_volver: 'assets/images/ui/fondo-boton.png',
 
-        // Decoración intro (a definir / ampliar)
-        decor_star: 'assets/images/decor/star.png',
-        decor_spark: 'assets/images/decor/spark.png',
+        // Decoración intro
+        decor_00: 'assets/images/decor/deco00.png',
+        decor_01: 'assets/images/decor/deco01.png',
+        decor_02: 'assets/images/decor/deco02.png',
+        decor_03: 'assets/images/decor/deco03.png',
+        decor_04: 'assets/images/decor/deco04.png',
 
         // Monstruo por capas (sprites recortados con transparencia)
         monster_body: 'assets/images/monster/body.png',
@@ -90,38 +95,41 @@ class AssetManager {
   }
 
   /**
-   * Sustituye imágenes fallidas por placeholders.
-   * Llamar desde setup() (createGraphics ya está disponible de forma fiable).
+   * Sustituye solo las imágenes que fallaron al cargar.
+   * No tocar el resto: en setup() algunas pueden seguir con width 0 un instante
+   * y un replace agresivo deja placeholders permanentes.
    */
   finalize() {
     for (const key of this._failedImageKeys) {
+      console.warn(`[AssetManager] Placeholder para: ${key}`);
       this.images.set(key, this._createImagePlaceholder(key));
       this.usedPlaceholders = true;
     }
     this._failedImageKeys.clear();
-
-    // Seguridad: imágenes que quedaron vacías / rotas
-    for (const [key, img] of this.images.entries()) {
-      if (!img || !img.width || img.width <= 1) {
-        this.images.set(key, this._createImagePlaceholder(key));
-        this.usedPlaceholders = true;
-      }
-    }
   }
 
   /**
    * @param {string} key
-   * @returns {p5.Image|null}
+   * @returns {p5.Image|p5.Graphics|null}
    */
   getImage(key) {
-    let img = this.images.get(key);
-    // Si falta o no cargó, genera placeholder bajo demanda (cubre fallos async).
-    if (!img || !img.width || img.width <= 1) {
-      img = this._createImagePlaceholder(key);
-      this.images.set(key, img);
-      this.usedPlaceholders = true;
+    const img = this.images.get(key);
+    if (!img) {
+      return null;
     }
+    // No reemplazar aquí: si aún no terminó de cargar, width puede ser 0/1
+    // y pisaríamos el asset real con un placeholder permanente.
     return img;
+  }
+
+  /**
+   * true si la imagen está lista para dibujar.
+   * @param {string} key
+   * @returns {boolean}
+   */
+  hasImage(key) {
+    const img = this.images.get(key);
+    return Boolean(img && img.width && img.width > 1);
   }
 
   /**

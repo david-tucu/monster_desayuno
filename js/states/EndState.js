@@ -13,6 +13,13 @@ class EndState extends BaseState {
     this.titleProps = { alpha: 0, y: 200, scale: 1 };
     this.subtitleProps = { alpha: 0, y: 300 };
     this._leaving = false;
+
+    /**
+     * Mesa tapa inferior (misma imagen que en Play / Intro).
+     * offsetY: positivo = más abajo; width: ancho de dibujo.
+     */
+    this.mesaCoverOffsetY = 290;
+    this.mesaCoverWidth = 1200;
   }
 
   enter() {
@@ -42,10 +49,10 @@ class EndState extends BaseState {
       game: this.game,
       x: DESIGN_WIDTH / 2,
       y: 1680,
-      w: 520,
-      h: 130,
+      w: 560,
+      h: 372,
       label: 'VOLVER A INICIO',
-      imageKey: 'btn_volver',
+      imageKey: 'fondo_boton',
       onPress: () => this._onBackPressed(),
     });
     this.backButton.alpha = 0;
@@ -70,36 +77,100 @@ class EndState extends BaseState {
       textFont(font);
     }
 
-    push();
-    drawingContext.globalAlpha = this.titleProps.alpha;
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(48);
-    text(this.message.title, DESIGN_WIDTH / 2, this.titleProps.y);
-    pop();
+    // Título
+    this._drawTextWithShadow({
+      text: this.message.title,
+      x: DESIGN_WIDTH / 2,
+      y: this.titleProps.y,
+      size: 64,
+      fill: [255, 255, 255],
+      alpha: this.titleProps.alpha,
+    });
 
-    push();
-    drawingContext.globalAlpha = this.subtitleProps.alpha;
-    fill(255, 255, 255, 230);
-    textAlign(CENTER, CENTER);
-    textSize(28);
-    text(this.message.subtitle, DESIGN_WIDTH / 2, this.subtitleProps.y, 900);
-    pop();
+    // Subtítulo centrado (caja de texto centrada en pantalla)
+    this._drawTextWithShadow({
+      text: this.message.subtitle,
+      x: DESIGN_WIDTH / 2,
+      y: this.subtitleProps.y,
+      size: 34,
+      fill: [255, 255, 255],
+      alpha: this.subtitleProps.alpha,
+      maxWidth: 920,
+    });
 
-    push();
-    drawingContext.globalAlpha = this.subtitleProps.alpha;
-    fill(255, 230, 120);
-    textAlign(CENTER, CENTER);
-    textSize(32);
-    text(`Puntaje saludable: ${this.game.healthyTotal}`, DESIGN_WIDTH / 2, 400);
-    pop();
+    // Puntaje
+    this._drawTextWithShadow({
+      text: `Puntaje saludable: ${this.game.healthyTotal}`,
+      x: DESIGN_WIDTH / 2,
+      y: 400,
+      size: 38,
+      fill: [255, 230, 120],
+      alpha: this.subtitleProps.alpha,
+    });
 
     if (this.monster) {
       this.monster.draw();
     }
+
+    // Mesa tapa (ajustá mesaCoverOffsetY / mesaCoverWidth en el constructor).
+    this.game.drawMesa({
+      offsetY: this.mesaCoverOffsetY,
+      w: this.mesaCoverWidth,
+    });
+
     if (this.backButton) {
       this.backButton.draw();
     }
+  }
+
+  /**
+   * Texto centrado con sombra suave.
+   * @param {object} opts
+   */
+  _drawTextWithShadow(opts) {
+    const alpha = opts.alpha !== undefined ? opts.alpha : 1;
+    if (alpha <= 0.01) {
+      return;
+    }
+
+    const x = opts.x;
+    const y = opts.y;
+    const size = opts.size || 32;
+    const [r, g, b] = opts.fill || [255, 255, 255];
+    const maxWidth = opts.maxWidth || 0;
+    const shadow = opts.shadow || { x: 3, y: 4, color: [0, 0, 0], alpha: 0.45 };
+
+    push();
+    textSize(size);
+
+    if (maxWidth > 0) {
+      // Caja centrada en x para que el wrap quede al centro de la pantalla
+      const boxX = x - maxWidth / 2;
+      const boxY = y;
+
+      textAlign(CENTER, TOP);
+
+      drawingContext.globalAlpha = alpha * shadow.alpha;
+      fill(shadow.color[0], shadow.color[1], shadow.color[2]);
+      text(opts.text, boxX + shadow.x, boxY + shadow.y, maxWidth);
+
+      drawingContext.globalAlpha = alpha;
+      fill(r, g, b);
+      text(opts.text, boxX, boxY, maxWidth);
+    } else {
+      textAlign(CENTER, CENTER);
+
+      drawingContext.globalAlpha = alpha * shadow.alpha;
+      fill(shadow.color[0], shadow.color[1], shadow.color[2]);
+      text(opts.text, x + shadow.x, y + shadow.y);
+
+      drawingContext.globalAlpha = alpha;
+      fill(r, g, b);
+      text(opts.text, x, y);
+    }
+
+    drawingContext.globalAlpha = 1;
+    pop();
   }
 
   exit() {

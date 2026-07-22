@@ -84,12 +84,12 @@ function getFinalResultMessage(healthyTotal) {
   }
   if (healthyTotal === 0) {
     return {
-      title: 'Desayuno neutro',
-      subtitle: 'Ni suma ni resta: la próxima puede mejorar.',
+      title: 'Mmmmmmm...',
+      subtitle: 'Cambiando algunas opciones ¡podrías lograr un desayuno monstruoso!',
     };
   }
   return {
-    title: 'Uy… el desayuno flaqueó',
+    title: 'Mmm...',
     subtitle: 'Tu monstruo necesita opciones más saludables.',
   };
 }

@@ -60,6 +60,29 @@ class StateManager {
   }
 
   /**
+   * Reinicio forzado: sale del estado actual y entra al nuevo sin transición.
+   * @param {string} id
+   */
+  forceStart(id) {
+    const state = this.states.get(id);
+    if (!state) {
+      console.error(`[StateManager] Estado desconocido: ${id}`);
+      return;
+    }
+    if (this.current) {
+      this.current.exit();
+    }
+    this.phase = 'idle';
+    this.transitionAlpha = 0;
+    this._transitionElapsed = 0;
+    this._pendingStateId = null;
+    this._onTransitionMidpoint = null;
+    this.current = state;
+    this.currentId = id;
+    this.current.enter();
+  }
+
+  /**
    * Solicita cambio de estado con transición animada.
    * El estado actual debe haber terminado (o no necesitar) su animación de salida.
    *

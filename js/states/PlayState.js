@@ -4,7 +4,7 @@
  *
  * Layout:
  *   - Monstruo arriba
- *   - 4 alimentos alineados abajo (siempre visibles durante la ronda)
+ *   - Mesa + 4 alimentos alineados abajo (siempre visibles durante la ronda)
  *
  * Cada ronda: exactamente 4 alimentos, 1 elección, 20 segundos.
  */
@@ -29,6 +29,26 @@ class PlayState extends BaseState {
       { x: 675, y: 1680 },
       { x: 945, y: 1680 },
     ];
+
+    /**
+     * Mesa (mismos valores que Intro / End).
+     * offsetY: positivo = más abajo; width: ancho de dibujo.
+     */
+    this.mesaCoverOffsetY = 90;
+    this.mesaCoverWidth = 1200;
+
+    /**
+     * Mesa de la zona de comidas (animable).
+     * y = centro vertical; al entrar sube desde más abajo.
+     */
+    this.mesa = {
+      x: DESIGN_WIDTH / 2,
+      y: DESIGN_HEIGHT + 200,
+      w: 1200,
+      h: 420,
+      alpha: 1,
+      restY: 0,
+    };
   }
 
   enter() {
@@ -37,6 +57,8 @@ class PlayState extends BaseState {
     this.roundLocked = false;
     this.activeFood = null;
 
+    this._setupMesa();
+
     this.monster = new Monster(this.game, DESIGN_WIDTH / 2, 820);
     this.monster.alpha = 0;
     this.monster.scale = 0.85;
@@ -44,6 +66,11 @@ class PlayState extends BaseState {
 
     this.game.tweens.animate(this.monster, { alpha: 1, scale: 1 }, 0.5, {
       easing: Easing.easeOutBack,
+    });
+
+    // Mesa entra desde abajo hacia su posición de reposo.
+    this.game.tweens.animate(this.mesa, { y: this.mesa.restY }, 0.55, {
+      easing: Easing.easeOutQuad,
     });
 
     this._startRound();
@@ -73,11 +100,8 @@ class PlayState extends BaseState {
       this.monster.draw();
     }
 
-    // Separador visual zona comida
-    stroke(255, 255, 255, 80);
-    strokeWeight(2);
-    line(80, 1380, DESIGN_WIDTH - 80, 1380);
-    noStroke();
+    // Mesa por encima del monstruo; comidas encima de la mesa.
+    this._drawMesa();
 
     for (const food of this.foods) {
       food.draw();
@@ -156,6 +180,36 @@ class PlayState extends BaseState {
   }
 
   // ---------------------------------------------------------------------------
+
+  _setupMesa() {
+    const img = this.game.assets.getImage('mesa');
+    this.mesa.w = this.mesaCoverWidth;
+    if (img && img.width > 1) {
+      this.mesa.h = this.mesa.w * (img.height / img.width);
+    } else {
+      this.mesa.h = 420;
+    }
+
+    // Misma fórmula que Intro/End: borde inferior + offsetY.
+    this.mesa.restY =
+      DESIGN_HEIGHT - this.mesa.h / 2 + this.mesaCoverOffsetY;
+    // Arranca un poco más abajo para la animación de entrada.
+    this.mesa.y = this.mesa.restY + 120;
+    this.mesa.alpha = 1;
+  }
+
+  _drawMesa() {
+    if (!this.mesa || this.mesa.alpha <= 0.01) {
+      return;
+    }
+    this.game.drawMesa({
+      x: this.mesa.x,
+      y: this.mesa.y,
+      w: this.mesa.w,
+      h: this.mesa.h,
+      alpha: this.mesa.alpha,
+    });
+  }
 
   _startRound() {
     this.roundLocked = false;

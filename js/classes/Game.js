@@ -118,6 +118,55 @@ class Game {
   }
 
   /**
+   * Alterna pantalla completa (teclas F / ESC).
+   */
+  toggleFullscreen() {
+    const goingFull = !fullscreen();
+    fullscreen(goingFull);
+    // Recalcular viewport tras el cambio (también dispara windowResized).
+    setTimeout(() => {
+      if (this._ready) {
+        this.windowResized();
+      }
+    }, 50);
+  }
+
+  /**
+   * Reinicia todo el juego: tweens, audio, puntaje y vuelve a INTRO (tecla R).
+   */
+  restart() {
+    this.pointerCancel();
+    this.tweens.killAll();
+    this.audio.stopAllSfx();
+    this.audio.stopBgm();
+    this.resetRun();
+    this.stateManager.forceStart(STATES.INTRO);
+    console.info('[Game] Reinicio completo');
+  }
+
+  /**
+   * Atajos de teclado (desarrollo / operador).
+   * @param {string} k
+   * @param {number} code
+   */
+  handleKey(k, code) {
+    if (!this._ready) {
+      return;
+    }
+    if (k === 'f' || k === 'F') {
+      this.toggleFullscreen();
+      return;
+    }
+    if (code === ESCAPE) {
+      this.toggleFullscreen();
+      return;
+    }
+    if (k === 'r' || k === 'R') {
+      this.restart();
+    }
+  }
+
+  /**
    * Fondo compartido por todos los estados (Intro / Play / End).
    * Asset: assets/images/ui/fondo.png
    */
@@ -130,6 +179,59 @@ class Game {
     }
     // Fallback si aún no está el PNG
     background(255, 220, 180);
+  }
+
+  /**
+   * Dibuja la mesa (assets/images/ui/mesa.png) a ancho completo.
+   * Usada en Play, Intro y End.
+   *
+   * @param {{ x?: number, y?: number, w?: number, h?: number, alpha?: number, offsetY?: number }} [options]
+   *   Si no pasás y: se alinea al borde inferior + offsetY.
+   */
+  drawMesa(options = {}) {
+    const img = this.assets.getImage('mesa');
+    const w = options.w !== undefined ? options.w : DESIGN_WIDTH;
+    let h = options.h;
+    if (h === undefined) {
+      h = img && img.width > 1 ? w * (img.height / img.width) : 420;
+    }
+    const x = options.x !== undefined ? options.x : DESIGN_WIDTH / 2;
+    const offsetY = options.offsetY !== undefined ? options.offsetY : 0;
+    const y =
+      options.y !== undefined ? options.y : DESIGN_HEIGHT - h / 2 + offsetY;
+    const alpha = options.alpha !== undefined ? options.alpha : 1;
+
+    if (alpha <= 0.01) {
+      return { x, y, w, h };
+    }
+
+    push();
+    drawingContext.globalAlpha = alpha;
+    noTint();
+    blendMode(BLEND);
+    imageMode(CENTER);
+    if (img && img.width > 1) {
+      image(img, x, y, w, h);
+    } else {
+      // Fallback visible si el asset no cargó
+      noStroke();
+      fill(230, 170, 50);
+      rectMode(CENTER);
+      rect(x, y, w, h * 0.7, 40);
+      console.warn('[Game] mesa.png no disponible — fallback');
+    }
+    drawingContext.globalAlpha = 1;
+    pop();
+
+    return { x, y, w, h };
+  }
+
+  /**
+   * Atajo: mesa tapa inferior (Intro / End).
+   * @param {{ offsetY?: number }} [options]
+   */
+  drawBaseCover(options = {}) {
+    this.drawMesa({ offsetY: options.offsetY || 0 });
   }
 
   // ---------------------------------------------------------------------------

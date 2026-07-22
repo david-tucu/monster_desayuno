@@ -24,6 +24,8 @@ class Button {
     this.label = config.label || '';
     this.imageKey = config.imageKey || null;
     this.onPress = config.onPress || null;
+    /** Color del texto [r,g,b] — oscuro por defecto para fondo amarillo. */
+    this.labelColor = config.labelColor || [90, 40, 10];
 
     // Propiedades animables por TweenManager
     this.scale = 1;
@@ -103,39 +105,36 @@ class Button {
     rotate(this.rotation);
     scale(this.scale);
     drawingContext.globalAlpha = this.alpha;
+    noTint();
+    blendMode(BLEND);
 
     const img = this.imageKey ? this.game.assets.getImage(this.imageKey) : null;
-    if (img && img.width) {
-      imageMode(CENTER);
+    const ready = img && img.width > 1;
+    const [lr, lg, lb] = this.labelColor;
+
+    imageMode(CENTER);
+    if (ready) {
       image(img, 0, 0, this.w, this.h);
     } else {
       // Respaldo visual sin asset
       rectMode(CENTER);
       noStroke();
-      fill(46, 168, 120);
-      rect(0, 0, this.w, this.h, 24);
-      fill(255);
+      fill(255, 200, 40);
+      rect(0, 0, this.w, this.h, 28);
+    }
+
+    if (this.label) {
+      fill(lr, lg, lb);
       textAlign(CENTER, CENTER);
       const font = this.game.assets.getFont('main');
       if (font) {
         textFont(font);
       }
-      textSize(36);
+      textSize(Math.min(42, this.h * 0.28));
       text(this.label, 0, 2);
     }
 
-    // Si hay imagen pero también label, se puede superponer texto:
-    if (img && img.width && this.label) {
-      fill(255);
-      textAlign(CENTER, CENTER);
-      const font = this.game.assets.getFont('main');
-      if (font) {
-        textFont(font);
-      }
-      textSize(34);
-      text(this.label, 0, 2);
-    }
-
+    drawingContext.globalAlpha = 1;
     pop();
   }
 }

@@ -40,8 +40,8 @@ class Monster {
       eyesW: 0.55,
       noseY: 0.04,
       noseW: 0.2,
-      mouthY: 0.05,
-      mouthW: 0.9,
+      mouthY: 0.075,
+      mouthW: 0.88,
     };
 
     this.state = MONSTER_STATES.IDLE;
@@ -218,6 +218,7 @@ class Monster {
     this._drawNose();
     this._drawMouth();
 
+    drawingContext.globalAlpha = 1;
     pop();
   }
 
