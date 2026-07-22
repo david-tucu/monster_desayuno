@@ -30,6 +30,20 @@ const MONSTER_STATES = Object.freeze({
   EATING: 'eating',
 });
 
+/** Paletas de color del monstruo (persistentes en Game). */
+const MONSTER_PALETTES = Object.freeze({
+  ORIGINAL: 'original',
+  FUCHSIA: 'fuchsia',
+  ORANGE: 'orange',
+});
+
+/** Ciclo al tocar la cara en Intro. */
+const MONSTER_PALETTE_CYCLE = Object.freeze([
+  MONSTER_PALETTES.ORIGINAL,
+  MONSTER_PALETTES.FUCHSIA,
+  MONSTER_PALETTES.ORANGE,
+]);
+
 /**
  * Catálogo de alimentos.
  * healthyLevel es un entero (puede ser negativo, cero o positivo).

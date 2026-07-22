@@ -102,6 +102,48 @@ class Monster {
      * Se aplican solo en draw().
      */
     this._fx = { scale: 1, y: 0, rotation: 0 };
+
+    /**
+     * Paleta visual (sincronizada con game.monsterPalette).
+     * Ciclo: original → fucsia → naranja → original.
+     */
+    this.palette = this.game.monsterPalette || MONSTER_PALETTES.ORIGINAL;
+  }
+
+  /**
+   * Avanza al siguiente color del ciclo y lo guarda en Game.
+   */
+  togglePalette() {
+    const cycle = MONSTER_PALETTE_CYCLE;
+    const idx = cycle.indexOf(this.palette);
+    const next = cycle[(idx < 0 ? 0 : idx + 1) % cycle.length];
+    this.palette = next;
+    this.game.monsterPalette = next;
+  }
+
+  /**
+   * Hit-test de la zona de cara (ojos / nariz / boca).
+   * @param {number} px
+   * @param {number} py
+   * @returns {boolean}
+   */
+  containsFace(px, py) {
+    const scaleMul = this.scale * this._fx.scale;
+    const cx = this.x;
+    const cy =
+      this.y +
+      this.bodyOffsetY +
+      this._fx.y +
+      this.layout.faceOffsetY * scaleMul +
+      this._bodyDrawH * 0.02 * scaleMul;
+    const rx = this._bodyDrawW * 0.42 * scaleMul;
+    const ry = this._bodyDrawH * 0.4 * scaleMul;
+    if (rx <= 0 || ry <= 0) {
+      return false;
+    }
+    const dx = (px - cx) / rx;
+    const dy = (py - cy) / ry;
+    return dx * dx + dy * dy <= 1;
   }
 
   /**
@@ -211,6 +253,7 @@ class Monster {
     scale(this.scale * this._fx.scale);
     drawingContext.globalAlpha = this.alpha;
     imageMode(CENTER);
+    this._applyPaletteFilter();
 
     this._drawBody();
     this._drawEyes();
@@ -218,8 +261,24 @@ class Monster {
     this._drawNose();
     this._drawMouth();
 
+    drawingContext.filter = 'none';
     drawingContext.globalAlpha = 1;
     pop();
+  }
+
+  /**
+   * Filtros CSS: viraje de verdes del PNG según paleta.
+   */
+  _applyPaletteFilter() {
+    if (this.palette === MONSTER_PALETTES.FUCHSIA) {
+      // Verde (~120°) → magenta/fucsia (~275°).
+      drawingContext.filter = 'hue-rotate(155deg) saturate(1.35)';
+    } else if (this.palette === MONSTER_PALETTES.ORANGE) {
+      // Verde (~120°) → naranja (~25°).
+      drawingContext.filter = 'hue-rotate(-95deg) saturate(1.4)';
+    } else {
+      drawingContext.filter = 'none';
+    }
   }
 
   // ---------------------------------------------------------------------------

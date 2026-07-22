@@ -13,6 +13,12 @@ class Game {
     /** Suma acumulada de healthyLevel de los alimentos consumidos. */
     this.healthyTotal = 0;
 
+    /**
+     * Color del monstruo (original / fucsia / naranja).
+     * Persiste entre Intro → Play → End y al volver a inicio.
+     */
+    this.monsterPalette = MONSTER_PALETTES.ORIGINAL;
+
     /** Escala y offsets para mapear pantalla real ↔ coordenadas de diseño. */
     this.viewScale = 1;
     this.offsetX = 0;
@@ -145,6 +151,19 @@ class Game {
   }
 
   /**
+   * Salta directo a la pantalla final con un healthyTotal dado (atajos de test).
+   * @param {number} score
+   */
+  jumpToEndWithScore(score) {
+    this.pointerCancel();
+    this.tweens.killAll();
+    this.audio.stopAllSfx();
+    this.healthyTotal = score;
+    this.stateManager.forceStart(STATES.END);
+    console.info('[Game] Test END con healthyTotal =', score);
+  }
+
+  /**
    * Atajos de teclado (desarrollo / operador).
    * @param {string} k
    * @param {number} code
@@ -163,6 +182,20 @@ class Game {
     }
     if (k === 'r' || k === 'R') {
       this.restart();
+      return;
+    }
+
+    // 1–5: saltar a END con cada rango de mensaje final
+    // 1 negativo | 2 cero | 3 aceptable | 4 bueno | 5 campeón
+    const testScores = {
+      '1': -3,
+      '2': 0,
+      '3': 2,
+      '4': 5,
+      '5': 9,
+    };
+    if (testScores[k] !== undefined) {
+      this.jumpToEndWithScore(testScores[k]);
     }
   }
 

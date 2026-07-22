@@ -84,10 +84,12 @@ class IntroState extends BaseState {
       game: this.game,
       x: DESIGN_WIDTH / 2,
       y: 1680,
-      w: 520,
-      h: 345,
+      w: 468,
+      h: 311,
       label: 'JUGAR',
+      labelSize: 77,
       imageKey: 'fondo_boton',
+      ctaPulse: true,
       onPress: () => this._onPlayPressed(),
     });
     this.playButton.alpha = 0;
@@ -101,6 +103,7 @@ class IntroState extends BaseState {
     if (this.monster) {
       this.monster.update(dt);
     }
+    this._updateDecorSwap(dt);
   }
 
   draw() {
@@ -166,10 +169,108 @@ class IntroState extends BaseState {
     if (this._exiting || !this.playButton) {
       return;
     }
-    this.playButton.pointerReleased(x, y);
+    if (this.playButton.pointerReleased(x, y)) {
+      return;
+    }
+    if (this.monster && this.monster.containsFace(x, y)) {
+      this._onMonsterFaceTapped();
+    }
+  }
+
+  _onMonsterFaceTapped() {
+    this.monster.togglePalette();
+    this.game.audio.unlock();
+    this.game.audio.play(AUDIO_KEYS.CLIC);
+    // Feedback visual breve
+    this.monster.setState(MONSTER_STATES.HAPPY);
   }
 
   // ---------------------------------------------------------------------------
+
+  /**
+   * Cada deco cambia por su cuenta entre 4 y 6 s (timers independientes).
+   * @param {number} dt
+   */
+  _updateDecorSwap(dt) {
+    if (this._exiting || !this.decorItems.length) {
+      return;
+    }
+    for (const decor of this.decorItems) {
+      if (decor.swapping) {
+        continue;
+      }
+      decor.swapTimer -= dt;
+      if (decor.swapTimer > 0) {
+        continue;
+      }
+      this._swapOneDecor(decor);
+      decor.swapTimer = this._nextDecorSwapDelay();
+    }
+  }
+
+  /**
+   * @returns {number} segundos entre 4 y 6
+   */
+  _nextDecorSwapDelay() {
+    return 4 + Math.random() * 2;
+  }
+
+  /**
+   * Fade de una sola decoración hacia otra clave libre.
+   * @param {object} decor
+   */
+  _swapOneDecor(decor) {
+    const nextKey = this._pickDecorKeyFor(decor);
+    if (!nextKey || nextKey === decor.imageKey) {
+      return;
+    }
+
+    decor.swapping = true;
+    const tw = this.game.tweens;
+    const restAlpha = decor.alpha > 0.5 ? decor.alpha : 1;
+
+    tw.animate(decor, { alpha: 0 }, 0.22, {
+      easing: Easing.easeInOutQuad,
+      onComplete: () => {
+        if (this._exiting) {
+          decor.swapping = false;
+          return;
+        }
+        decor.imageKey = nextKey;
+        tw.animate(decor, { alpha: restAlpha }, 0.28, {
+          easing: Easing.easeOutQuad,
+          onComplete: () => {
+            decor.swapping = false;
+          },
+        });
+      },
+    });
+  }
+
+  /**
+   * Elige una clave distinta a la actual y, si se puede, no usada por otras decos.
+   * @param {object} decor
+   * @returns {string|null}
+   */
+  _pickDecorKeyFor(decor) {
+    const usedByOthers = new Set(
+      this.decorItems
+        .filter((d) => d !== decor)
+        .map((d) => d.imageKey)
+    );
+    const free = this.decorKeys.filter(
+      (key) => key !== decor.imageKey && !usedByOthers.has(key)
+    );
+    if (free.length) {
+      return free[Math.floor(Math.random() * free.length)];
+    }
+    // Fallback: cualquier distinta a la actual
+    const others = this.decorKeys.filter((key) => key !== decor.imageKey);
+    if (!others.length) {
+      return null;
+    }
+    return others[Math.floor(Math.random() * others.length)];
+  }
 
   /**
    * Elige N claves de decoración al azar sin repetir.
@@ -197,6 +298,8 @@ class IntroState extends BaseState {
       imageKey,
       floatPhase: Math.random() * Math.PI * 2,
       baseY: y,
+      swapTimer: this._nextDecorSwapDelay(),
+      swapping: false,
     };
   }
 
@@ -240,6 +343,11 @@ class IntroState extends BaseState {
     }
     this._exiting = true;
     this.playButton.enabled = false;
+
+    for (const decor of this.decorItems) {
+      this.game.tweens.killTweensOf(decor);
+      decor.swapping = false;
+    }
 
     this.game.audio.unlock();
     this.game.audio.play(AUDIO_KEYS.CLIC);

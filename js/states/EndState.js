@@ -10,8 +10,8 @@ class EndState extends BaseState {
     this.monster = null;
     this.backButton = null;
     this.message = { title: '', subtitle: '' };
-    this.titleProps = { alpha: 0, y: 200, scale: 1 };
-    this.subtitleProps = { alpha: 0, y: 300 };
+    this.titleProps = { alpha: 0, y: 100, scale: 1 };
+    this.subtitleProps = { alpha: 0, y: 170 };
     this._leaving = false;
 
     /**
@@ -41,18 +41,20 @@ class EndState extends BaseState {
     }
 
     this.titleProps.alpha = 0;
-    this.titleProps.y = 150;
+    this.titleProps.y = 50;
     this.subtitleProps.alpha = 0;
-    this.subtitleProps.y = 270;
+    this.subtitleProps.y = 120;
 
     this.backButton = new Button({
       game: this.game,
       x: DESIGN_WIDTH / 2,
       y: 1680,
-      w: 560,
-      h: 372,
-      label: 'VOLVER A INICIO',
+      w: 504,
+      h: 335,
+      label: 'INICIO',
+      labelSize: 77,
       imageKey: 'fondo_boton',
+      ctaPulse: true,
       onPress: () => this._onBackPressed(),
     });
     this.backButton.alpha = 0;
@@ -82,7 +84,7 @@ class EndState extends BaseState {
       text: this.message.title,
       x: DESIGN_WIDTH / 2,
       y: this.titleProps.y,
-      size: 64,
+      size: 72,
       fill: [255, 255, 255],
       alpha: this.titleProps.alpha,
     });
@@ -92,7 +94,7 @@ class EndState extends BaseState {
       text: this.message.subtitle,
       x: DESIGN_WIDTH / 2,
       y: this.subtitleProps.y,
-      size: 34,
+      size: 40,
       fill: [255, 255, 255],
       alpha: this.subtitleProps.alpha,
       maxWidth: 920,
@@ -100,10 +102,10 @@ class EndState extends BaseState {
 
     // Puntaje
     this._drawTextWithShadow({
-      text: `Puntaje saludable: ${this.game.healthyTotal}`,
+      text: `PUNTOS: ${this.game.healthyTotal}`,
       x: DESIGN_WIDTH / 2,
-      y: 400,
-      size: 38,
+      y: 280,
+      size: 48,
       fill: [255, 230, 120],
       alpha: this.subtitleProps.alpha,
     });
@@ -197,11 +199,11 @@ class EndState extends BaseState {
   _playEnterAnimations() {
     const tw = this.game.tweens;
 
-    tw.animate(this.titleProps, { alpha: 1, y: 200 }, 0.5, {
+    tw.animate(this.titleProps, { alpha: 1, y: 100 }, 0.5, {
       easing: Easing.easeOutBack,
     });
 
-    tw.animate(this.subtitleProps, { alpha: 1, y: 300 }, 0.45, {
+    tw.animate(this.subtitleProps, { alpha: 1, y: 170 }, 0.45, {
       easing: Easing.easeOutQuad,
       delay: 0.12,
     });
@@ -238,7 +240,7 @@ class EndState extends BaseState {
       }
     };
 
-    tw.animate(this.titleProps, { alpha: 0, y: 150 }, 0.3, {
+    tw.animate(this.titleProps, { alpha: 0, y: 50 }, 0.3, {
       easing: Easing.easeInOutQuad,
       onComplete: done,
     });

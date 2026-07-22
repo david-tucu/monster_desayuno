@@ -316,17 +316,17 @@ class PlayState extends BaseState {
     }
     fill(255);
     textAlign(LEFT, TOP);
-    textSize(26);
-    text(`Ronda ${this.roundIndex + 1}/${NUM_ROUNDS}`, 36, 36);
+    textSize(32);
+    text(`RONDA ${this.roundIndex + 1}/${NUM_ROUNDS}`, 36, 34);
 
     textAlign(RIGHT, TOP);
-    text(`Puntos: ${this.game.healthyTotal}`, DESIGN_WIDTH - 36, 36);
+    text(`PUNTOS: ${this.game.healthyTotal}`, DESIGN_WIDTH - 36, 34);
 
     // Barra de tiempo
     const barW = 520;
     const barH = 18;
     const barX = DESIGN_WIDTH / 2 - barW / 2;
-    const barY = 90;
+    const barY = 42;
     const ratio = constrain(this.roundTimeLeft / ROUND_DURATION_SEC, 0, 1);
 
     noStroke();

@@ -26,6 +26,23 @@ class Button {
     this.onPress = config.onPress || null;
     /** Color del texto [r,g,b] — oscuro por defecto para fondo amarillo. */
     this.labelColor = config.labelColor || [90, 40, 10];
+    /** Tamaño del texto (si no se pasa, se calcula según alto del botón). */
+    this.labelSize = config.labelSize || null;
+    /**
+     * Offset vertical del texto (px). El PNG tiene labio 3D abajo,
+     * así que el centro óptico de la cara suele ir un poco arriba.
+     */
+    this.labelOffsetY =
+      config.labelOffsetY !== undefined ? config.labelOffsetY : -14;
+
+    /** Pulso suave de call-to-action (escala oscilante). */
+    this.ctaPulse = !!config.ctaPulse;
+    /** Amplitud del pulso CTA (fracción de escala). */
+    this.ctaAmplitude =
+      config.ctaAmplitude !== undefined ? config.ctaAmplitude : 0.05;
+    /** Periodo del pulso en segundos. */
+    this.ctaPeriod =
+      config.ctaPeriod !== undefined ? config.ctaPeriod : 1.15;
 
     // Propiedades animables por TweenManager
     this.scale = 1;
@@ -38,13 +55,31 @@ class Button {
   }
 
   /**
+   * Escala extra del CTA (1 si está apagado / pulsado / no listo).
+   * @returns {number}
+   */
+  _ctaScale() {
+    if (
+      !this.ctaPulse ||
+      !this.enabled ||
+      this._pressed ||
+      this.alpha < 0.9
+    ) {
+      return 1;
+    }
+    const t = (typeof millis === 'function' ? millis() : 0) / 1000;
+    return 1 + Math.sin((t * Math.PI * 2) / this.ctaPeriod) * this.ctaAmplitude;
+  }
+
+  /**
    * @param {number} px Coordenada lógica X
    * @param {number} py Coordenada lógica Y
    * @returns {boolean}
    */
   contains(px, py) {
-    const halfW = (this.w * this.scale) / 2;
-    const halfH = (this.h * this.scale) / 2;
+    const s = this.scale * this._ctaScale();
+    const halfW = (this.w * s) / 2;
+    const halfH = (this.h * s) / 2;
     return (
       px >= this.x - halfW &&
       px <= this.x + halfW &&
@@ -103,7 +138,7 @@ class Button {
     push();
     translate(this.x, this.y);
     rotate(this.rotation);
-    scale(this.scale);
+    scale(this.scale * this._ctaScale());
     drawingContext.globalAlpha = this.alpha;
     noTint();
     blendMode(BLEND);
@@ -130,8 +165,10 @@ class Button {
       if (font) {
         textFont(font);
       }
-      textSize(Math.min(42, this.h * 0.28));
-      text(this.label, 0, 2);
+      const size =
+        this.labelSize || Math.min(56, this.h * 0.36);
+      textSize(size);
+      text(this.label, 0, this.labelOffsetY);
     }
 
     drawingContext.globalAlpha = 1;
