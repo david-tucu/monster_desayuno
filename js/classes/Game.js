@@ -9,6 +9,7 @@ class Game {
     this.audio = new AudioManager(this.assets);
     this.tweens = new TweenManager();
     this.stateManager = new StateManager(this);
+    this.configOverlay = new ConfigOverlay(this);
 
     /** Suma acumulada de healthyLevel de los alimentos consumidos. */
     this.healthyTotal = 0;
@@ -87,7 +88,9 @@ class Game {
     dt = Math.min(dt, 0.05);
 
     this.tweens.update(dt);
-    this.stateManager.update(dt);
+    if (!this.configOverlay.visible) {
+      this.stateManager.update(dt);
+    }
 
     // Fondo letterbox
     background(15, 15, 18);
@@ -103,6 +106,10 @@ class Game {
     drawingContext.clip();
 
     this.stateManager.draw();
+
+    if (this.configOverlay) {
+      this.configOverlay.draw();
+    }
 
     drawingContext.restore();
     pop();
@@ -172,6 +179,17 @@ class Game {
     if (!this._ready) {
       return;
     }
+
+    if (k === 'p' || k === 'P') {
+      this.configOverlay.toggle();
+      return;
+    }
+
+    if (this.configOverlay.visible) {
+      this.configOverlay.handleKey(k, code);
+      return;
+    }
+
     if (k === 'f' || k === 'F') {
       this.toggleFullscreen();
       return;
@@ -190,12 +208,22 @@ class Game {
     const testScores = {
       '1': -3,
       '2': 0,
-      '3': 2,
-      '4': 5,
-      '5': 9,
+      '3': 6,
+      '4': 14,
+      '5': 20,
     };
     if (testScores[k] !== undefined) {
       this.jumpToEndWithScore(testScores[k]);
+    }
+  }
+
+  /**
+   * Scroll del overlay de configuración.
+   * @param {number} delta
+   */
+  handleWheel(delta) {
+    if (this.configOverlay && this.configOverlay.visible) {
+      this.configOverlay.handleWheel(delta);
     }
   }
 
@@ -273,6 +301,9 @@ class Game {
 
   pointerPressed() {
     this.audio.unlock();
+    if (this.configOverlay && this.configOverlay.visible) {
+      return;
+    }
     const pos = this._pointerToDesign({ clamp: false });
     if (!pos) {
       return;
@@ -281,6 +312,9 @@ class Game {
   }
 
   pointerReleased() {
+    if (this.configOverlay && this.configOverlay.visible) {
+      return false;
+    }
     // Siempre procesar el release (también fuera del área / letterbox).
     const pos = this._pointerToDesign({ clamp: true });
     this.stateManager.pointerReleased(pos.x, pos.y);
@@ -288,6 +322,9 @@ class Game {
   }
 
   pointerDragged() {
+    if (this.configOverlay && this.configOverlay.visible) {
+      return;
+    }
     // Seguir el dedo/mouse aunque salga del rectángulo de diseño.
     const pos = this._pointerToDesign({ clamp: true });
     this.stateManager.pointerDragged(pos.x, pos.y);

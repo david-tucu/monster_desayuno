@@ -14,40 +14,42 @@
     CACHE BUST: si no ves cambios al refrescar, subí este número (ej. 6 → 7)
     y volvé a cargar la página.
   -->
-  <link rel="stylesheet" href="style.css?v=24" />
+  <link rel="stylesheet" href="style.css?v=34" />
 </head>
 <body>
   <!-- Contenedor del canvas p5.js -->
   <main id="game-root"></main>
 
   <!-- Librerías locales (sin CDN) -->
-  <script src="js/lib/p5.min.js?v=24"></script>
-  <script src="js/lib/p5.sound.min.js?v=24"></script>
+  <script charset="utf-8" src="js/lib/p5.min.js?v=34"></script>
+  <script charset="utf-8" src="js/lib/p5.sound.min.js?v=34"></script>
 
-  <!-- Constantes y configuración -->
-  <script src="js/constants.js?v=24"></script>
+  <!-- Constantes y datos -->
+  <script charset="utf-8" src="js/constants.js?v=34"></script>
+  <script charset="utf-8" src="js/data/FoodCatalog.js?v=34"></script>
 
   <!-- Sistemas / managers -->
-  <script src="js/classes/AssetManager.js?v=24"></script>
-  <script src="js/classes/AudioManager.js?v=24"></script>
-  <script src="js/classes/TweenManager.js?v=24"></script>
-  <script src="js/classes/StateManager.js?v=24"></script>
+  <script charset="utf-8" src="js/classes/AssetManager.js?v=34"></script>
+  <script charset="utf-8" src="js/classes/AudioManager.js?v=34"></script>
+  <script charset="utf-8" src="js/classes/TweenManager.js?v=34"></script>
+  <script charset="utf-8" src="js/classes/StateManager.js?v=34"></script>
 
   <!-- Entidades de juego -->
-  <script src="js/classes/Button.js?v=24"></script>
-  <script src="js/classes/Food.js?v=24"></script>
-  <script src="js/classes/Monster.js?v=24"></script>
+  <script charset="utf-8" src="js/classes/Button.js?v=34"></script>
+  <script charset="utf-8" src="js/classes/Food.js?v=34"></script>
+  <script charset="utf-8" src="js/classes/Monster.js?v=34"></script>
+  <script charset="utf-8" src="js/classes/ConfigOverlay.js?v=34"></script>
 
   <!-- Estados -->
-  <script src="js/states/BaseState.js?v=24"></script>
-  <script src="js/states/IntroState.js?v=24"></script>
-  <script src="js/states/PlayState.js?v=24"></script>
-  <script src="js/states/EndState.js?v=24"></script>
+  <script charset="utf-8" src="js/states/BaseState.js?v=34"></script>
+  <script charset="utf-8" src="js/states/IntroState.js?v=34"></script>
+  <script charset="utf-8" src="js/states/PlayState.js?v=34"></script>
+  <script charset="utf-8" src="js/states/EndState.js?v=34"></script>
 
   <!-- Orquestador principal -->
-  <script src="js/classes/Game.js?v=24"></script>
+  <script charset="utf-8" src="js/classes/Game.js?v=34"></script>
 
   <!-- Punto de entrada p5.js (solo preload / setup / draw + input) -->
-  <script src="sketch.js?v=24"></script>
+  <script charset="utf-8" src="sketch.js?v=34"></script>
 </body>
 </html>

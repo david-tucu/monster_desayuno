@@ -48,22 +48,14 @@ class AssetManager {
         monster_mouth_chew_1: 'assets/images/monster/mouth_chewing_1.png',
         monster_mouth_chew_2: 'assets/images/monster/mouth_chewing_2.png',
         monster_mouth_happy: 'assets/images/monster/mouth_happy.png',
+        monster_mouth_neutral: 'assets/images/monster/mouth_neutral.png',
         monster_mouth_full: 'assets/images/monster/mouth_full.png',
         // TODO: reemplazar cuando exista mouth_sad.png
         monster_mouth_sad: 'assets/images/monster/mouth_full.png',
         monster_eyebrows_neutral: 'assets/images/monster/eyebrows_neutral.png',
         monster_eyebrows_sad: 'assets/images/monster/eyebrows_sad.png',
         // monster_blush: 'assets/images/monster/blush.png',
-
-        // Alimentos
-        food_leche: 'assets/images/food/leche.png',
-        food_yogur: 'assets/images/food/yogur.png',
-        food_banana: 'assets/images/food/banana.png',
-        food_cereal: 'assets/images/food/cereal.png',
-        food_jugo: 'assets/images/food/jugo.png',
-        food_galletitas: 'assets/images/food/galletitas.png',
-        food_golosina: 'assets/images/food/golosina.png',
-        food_gaseosa: 'assets/images/food/gaseosa.png',
+        // Alimentos: se cargan desde FOOD_CATALOG (js/data/FoodCatalog.js)
       },
       sounds: {
         [AUDIO_KEYS.CLIC]: 'assets/audio/clic.mp3',
@@ -90,6 +82,7 @@ class AssetManager {
    */
   loadAll() {
     this._loadImages();
+    this._loadFoodCatalogImages();
     this._loadSounds();
     this._loadFonts();
   }
@@ -148,6 +141,24 @@ class AssetManager {
     return this.fonts.get(key) || null;
   }
 
+  /**
+   * Clave interna de imagen para un archivo del catálogo de alimentos.
+   * @param {string} file Nombre de archivo (ej. "leche.png")
+   * @returns {string}
+   */
+  foodImageKey(file) {
+    return `food:${file}`;
+  }
+
+  /**
+   * Imagen de un alimento del catálogo (por nombre de archivo).
+   * @param {string} file
+   * @returns {p5.Image|p5.Graphics|null}
+   */
+  getFoodImage(file) {
+    return this.getImage(this.foodImageKey(file));
+  }
+
   // ---------------------------------------------------------------------------
   // Privados
   // ---------------------------------------------------------------------------
@@ -155,22 +166,51 @@ class AssetManager {
   _loadImages() {
     const entries = Object.entries(this.manifest.images);
     for (const [key, path] of entries) {
-      try {
-        const img = loadImage(
-          path,
-          () => {},
-          () => {
-            console.warn(`[AssetManager] Imagen no encontrada: ${path}. Se usará placeholder.`);
-            this._failedImageKeys.add(key);
-            this.usedPlaceholders = true;
-          }
-        );
-        this.images.set(key, img);
-      } catch (err) {
-        console.warn(`[AssetManager] Error cargando imagen ${key}:`, err);
-        this._failedImageKeys.add(key);
-        this.usedPlaceholders = true;
+      this._loadImageEntry(key, path);
+    }
+  }
+
+  /**
+   * Carga cada PNG declarado en FOOD_CATALOG (sin listar archivos acá).
+   */
+  _loadFoodCatalogImages() {
+    if (typeof FOOD_CATALOG === 'undefined' || !FOOD_CATALOG.length) {
+      console.warn('[AssetManager] FOOD_CATALOG vacío o no cargado.');
+      return;
+    }
+    const dir =
+      typeof FOOD_ASSETS_DIR !== 'undefined' ? FOOD_ASSETS_DIR : 'assets/images/food/';
+    for (const item of FOOD_CATALOG) {
+      if (!item || !item.file) {
+        continue;
       }
+      const key = this.foodImageKey(item.file);
+      this._loadImageEntry(key, `${dir}${item.file}`);
+    }
+  }
+
+  /**
+   * @param {string} key
+   * @param {string} path
+   */
+  _loadImageEntry(key, path) {
+    try {
+      const img = loadImage(
+        path,
+        () => {},
+        () => {
+          console.warn(
+            `[AssetManager] Imagen no encontrada: ${path}. Se usará placeholder.`
+          );
+          this._failedImageKeys.add(key);
+          this.usedPlaceholders = true;
+        }
+      );
+      this.images.set(key, img);
+    } catch (err) {
+      console.warn(`[AssetManager] Error cargando imagen ${key}:`, err);
+      this._failedImageKeys.add(key);
+      this.usedPlaceholders = true;
     }
   }
 
@@ -225,8 +265,9 @@ class AssetManager {
    * @returns {p5.Image}
    */
   _createImagePlaceholder(key) {
-    const w = key.startsWith('food_') ? 180 : key.startsWith('monster_') ? 400 : 320;
-    const h = key.startsWith('food_') ? 180 : key.startsWith('monster_') ? 400 : 160;
+    const isFood = key.startsWith('food:') || key.startsWith('food_');
+    const w = isFood ? 180 : key.startsWith('monster_') ? 400 : 320;
+    const h = isFood ? 180 : key.startsWith('monster_') ? 400 : 160;
     const g = createGraphics(w, h);
     g.pixelDensity(1);
     g.background(60, 60, 70);

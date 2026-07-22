@@ -111,6 +111,11 @@ class PlayState extends BaseState {
     if (this.activeFood && this.activeFood.dragging) {
       this.activeFood.draw();
     }
+
+    // Labels fijos en el slot (no siguen el drag).
+    for (const food of this.foods) {
+      food.drawLabel();
+    }
   }
 
   exit() {
@@ -222,10 +227,9 @@ class PlayState extends BaseState {
       const slot = this.foodSlots[i];
       const food = new Food({
         game: this.game,
-        id: def.id,
-        name: def.name,
+        file: def.file,
+        label: def.label,
         healthyLevel: def.healthyLevel,
-        imageKey: def.imageKey,
         x: slot.x,
         y: slot.y + 80,
       });

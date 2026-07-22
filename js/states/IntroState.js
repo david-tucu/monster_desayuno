@@ -172,9 +172,47 @@ class IntroState extends BaseState {
     if (this.playButton.pointerReleased(x, y)) {
       return;
     }
+    if (this._containsLogo(x, y)) {
+      this._onLogoTapped();
+      return;
+    }
     if (this.monster && this.monster.containsFace(x, y)) {
       this._onMonsterFaceTapped();
     }
+  }
+
+  /**
+   * Hit-test del logo (coords de diseño).
+   * @param {number} px
+   * @param {number} py
+   * @returns {boolean}
+   */
+  _containsLogo(px, py) {
+    if (!this.logo || this.logo.alpha < 0.5) {
+      return false;
+    }
+    const logoImg = this.game.assets.getImage('logo');
+    const w = this.logoWidth * this.logo.scale;
+    let h;
+    if (logoImg && logoImg.width > 1) {
+      h = w * (logoImg.height / logoImg.width);
+    } else {
+      h = 140 * this.logo.scale;
+    }
+    const halfW = w / 2;
+    const halfH = h / 2;
+    return (
+      px >= this.logo.x - halfW &&
+      px <= this.logo.x + halfW &&
+      py >= this.logo.y - halfH &&
+      py <= this.logo.y + halfH
+    );
+  }
+
+  _onLogoTapped() {
+    this.game.audio.unlock();
+    this.game.audio.play(AUDIO_KEYS.CLIC);
+    this.game.toggleFullscreen();
   }
 
   _onMonsterFaceTapped() {

@@ -32,13 +32,13 @@ class EndState extends BaseState {
     this.monster.alpha = 0;
     this.monster.scale = 0.85;
 
-    if (this.game.healthyTotal > 0) {
-      this.monster.setState(MONSTER_STATES.HAPPY);
-    } else if (this.game.healthyTotal < 0) {
-      this.monster.setState(MONSTER_STATES.SAD);
-    } else {
-      this.monster.setState(MONSTER_STATES.IDLE);
+    const band = getFinalResultBand(this.game.healthyTotal);
+    const stateOpts = { hold: true };
+    // Alegre: rebota unos segundos y luego queda quieto (misma boca HAPPY).
+    if (band.monsterState === MONSTER_STATES.HAPPY) {
+      stateOpts.motionDuration = 6;
     }
+    this.monster.setState(band.monsterState, stateOpts);
 
     this.titleProps.alpha = 0;
     this.titleProps.y = 50;

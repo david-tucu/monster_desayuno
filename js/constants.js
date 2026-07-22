@@ -25,6 +25,7 @@ const MONSTER_STATES = Object.freeze({
   IDLE: 'idle',
   BLINK: 'blink',
   HAPPY: 'happy',
+  NEUTRAL: 'neutral',
   FULL: 'full',
   SAD: 'sad',
   EATING: 'eating',
@@ -44,22 +45,6 @@ const MONSTER_PALETTE_CYCLE = Object.freeze([
   MONSTER_PALETTES.ORANGE,
 ]);
 
-/**
- * Catálogo de alimentos.
- * healthyLevel es un entero (puede ser negativo, cero o positivo).
- * No se usan booleanos healthy/unhealthy.
- */
-const FOOD_CATALOG = Object.freeze([
-  { id: 'leche', name: 'Leche', healthyLevel: 2, imageKey: 'food_leche' },
-  { id: 'yogur', name: 'Yogur', healthyLevel: 2, imageKey: 'food_yogur' },
-  { id: 'banana', name: 'Banana', healthyLevel: 2, imageKey: 'food_banana' },
-  { id: 'cereal', name: 'Cereal', healthyLevel: 1, imageKey: 'food_cereal' },
-  { id: 'jugo', name: 'Jugo', healthyLevel: 0, imageKey: 'food_jugo' },
-  { id: 'galletitas', name: 'Galletitas', healthyLevel: -1, imageKey: 'food_galletitas' },
-  { id: 'golosina', name: 'Golosina', healthyLevel: -2, imageKey: 'food_golosina' },
-  { id: 'gaseosa', name: 'Gaseosa', healthyLevel: -3, imageKey: 'food_gaseosa' },
-]);
-
 /** Claves de audio centralizadas (coinciden con AssetManager). */
 const AUDIO_KEYS = Object.freeze({
   CLIC: 'sfx_clic',
@@ -71,39 +56,68 @@ const AUDIO_KEYS = Object.freeze({
 });
 
 /**
+ * Bandas de mensaje final (única fuente; también se muestra en overlay P).
+ * Se evalúan en orden; la primera que matchea gana.
+ * monsterState: expresión del monstruo en la pantalla final.
+ */
+const FINAL_RESULT_MESSAGES = [
+  {
+    rangeLabel: '\u2265 18',
+    test: (t) => t >= 18,
+    title: '\u00a1Desayuno de campe\u00f3n!',
+    subtitle: 'Tu monstruo arranca el d\u00eda con energ\u00eda total.',
+    monsterState: MONSTER_STATES.HAPPY,
+  },
+  {
+    rangeLabel: '\u2265 12',
+    test: (t) => t >= 12,
+    title: '\u00a1Buen desayuno!',
+    subtitle: 'Elegiste opciones que suman bienestar.',
+    monsterState: MONSTER_STATES.HAPPY,
+  },
+  {
+    rangeLabel: '\u2265 5',
+    test: (t) => t >= 5,
+    title: 'Desayuno aceptable',
+    subtitle: 'Hay margen para elegir un poco mejor.',
+    monsterState: MONSTER_STATES.NEUTRAL,
+  },
+  {
+    rangeLabel: '= 0',
+    test: (t) => t === 0,
+    title: 'Mmmmmmm...',
+    subtitle: 'Cambiando algunas opciones \u00a1podr\u00edas lograr un desayuno monstruoso!',
+    monsterState: MONSTER_STATES.NEUTRAL,
+  },
+  {
+    rangeLabel: '< 0 o 1\u20134',
+    test: () => true,
+    title: 'Mmm...',
+    subtitle: 'Tu monstruo necesita opciones m\u00e1s saludables.',
+    monsterState: MONSTER_STATES.FULL,
+  },
+];
+
+/**
+ * Banda completa según healthyTotal.
+ * @param {number} healthyTotal
+ * @returns {{ rangeLabel: string, title: string, subtitle: string, monsterState: string }}
+ */
+function getFinalResultBand(healthyTotal) {
+  for (const row of FINAL_RESULT_MESSAGES) {
+    if (row.test(healthyTotal)) {
+      return row;
+    }
+  }
+  return FINAL_RESULT_MESSAGES[FINAL_RESULT_MESSAGES.length - 1];
+}
+
+/**
  * Calcula el mensaje final a partir de healthyTotal.
- * Función independiente: no usa cantidad de aciertos.
- *
  * @param {number} healthyTotal
  * @returns {{ title: string, subtitle: string }}
  */
 function getFinalResultMessage(healthyTotal) {
-  if (healthyTotal >= 8) {
-    return {
-      title: '¡Desayuno de campeón!',
-      subtitle: 'Tu monstruo arranca el día con energía total.',
-    };
-  }
-  if (healthyTotal >= 4) {
-    return {
-      title: '¡Buen desayuno!',
-      subtitle: 'Elegiste opciones que suman bienestar.',
-    };
-  }
-  if (healthyTotal >= 1) {
-    return {
-      title: 'Desayuno aceptable',
-      subtitle: 'Hay margen para elegir un poco mejor.',
-    };
-  }
-  if (healthyTotal === 0) {
-    return {
-      title: 'Mmmmmmm...',
-      subtitle: 'Cambiando algunas opciones ¡podrías lograr un desayuno monstruoso!',
-    };
-  }
-  return {
-    title: 'Mmm...',
-    subtitle: 'Tu monstruo necesita opciones más saludables.',
-  };
+  const band = getFinalResultBand(healthyTotal);
+  return { title: band.title, subtitle: band.subtitle };
 }

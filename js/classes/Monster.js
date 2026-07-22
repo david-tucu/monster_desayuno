@@ -1,7 +1,7 @@
 /**
  * Monster
  * Capas PNG recortadas (distinto tamaño cada una) apiladas sobre el body.
- * Estados: IDLE, BLINK, HAPPY, FULL, SAD, EATING (con masticación).
+ * Estados: IDLE, BLINK, HAPPY, NEUTRAL, FULL, SAD, EATING (con masticación).
  */
 class Monster {
   /**
@@ -40,7 +40,7 @@ class Monster {
       eyesW: 0.55,
       noseY: 0.04,
       noseW: 0.2,
-      mouthY: 0.075,
+      mouthY: 0.079,
       mouthW: 0.88,
     };
 
@@ -71,6 +71,11 @@ class Monster {
         mouthKey: 'monster_mouth_happy',
         eyesOpen: true,
       },
+      [MONSTER_STATES.NEUTRAL]: {
+        update: (dt) => this._updateTimedExpression(dt, 1.2),
+        mouthKey: 'monster_mouth_neutral',
+        eyesOpen: true,
+      },
       [MONSTER_STATES.FULL]: {
         update: (dt) => this._updateTimedExpression(dt, 1.4),
         mouthKey: 'monster_mouth_full',
@@ -93,6 +98,18 @@ class Monster {
 
     /** 'wait' = boca abierta esperando; 'chew' = masticando tras comer. */
     this._eatingMode = null;
+
+    /** Si true, las expresiones temporizadas no vuelven a IDLE (pantalla final). */
+    this._holdExpression = false;
+
+    /** Segundos de movimiento permitidos en expresión hold (null = sin límite). */
+    this._holdMotionDuration = null;
+
+    /** Tiempo acumulado en la expresión hold actual. */
+    this._holdElapsed = 0;
+
+    /** Congela offsets de motion FX (mantiene boca/expresión). */
+    this._motionFrozen = false;
 
     /** Tiempo global para oscilaciones continuas. */
     this._animTime = 0;
@@ -172,8 +189,11 @@ class Monster {
 
   /**
    * @param {string} nextState
+   * @param {{ hold?: boolean, motionDuration?: number|null }} [options]
+   *   hold: mantener expresión (no volver a IDLE)
+   *   motionDuration: en hold, segundos de movimiento antes de congelar (ej. HAPPY)
    */
-  setState(nextState) {
+  setState(nextState, options = {}) {
     if (!this._handlers[nextState]) {
       console.warn(`[Monster] Estado desconocido: ${nextState}`);
       return;
@@ -181,6 +201,11 @@ class Monster {
     this.state = nextState;
     this._stateTimer = 0;
     this._chewFrame = 0;
+    this._holdExpression = Boolean(options.hold);
+    this._holdElapsed = 0;
+    this._motionFrozen = false;
+    this._holdMotionDuration =
+      options.motionDuration !== undefined ? options.motionDuration : null;
 
     if (nextState === MONSTER_STATES.IDLE) {
       this._blinkTimer = this._nextBlinkDelay();
@@ -209,14 +234,19 @@ class Monster {
   }
 
   /**
-   * EATING masticación → HAPPY o FULL.
+   * EATING masticación → HAPPY (≥3), NEUTRAL (1–2) o FULL (≤0).
    * @param {number} healthyLevel
    * @param {function} [onComplete]
    */
   reactToFood(healthyLevel, onComplete) {
     this._onExpressionComplete = onComplete || null;
-    this._pendingReaction =
-      healthyLevel > 0 ? MONSTER_STATES.HAPPY : MONSTER_STATES.FULL;
+    if (healthyLevel >= 3) {
+      this._pendingReaction = MONSTER_STATES.HAPPY;
+    } else if (healthyLevel >= 1) {
+      this._pendingReaction = MONSTER_STATES.NEUTRAL;
+    } else {
+      this._pendingReaction = MONSTER_STATES.FULL;
+    }
     this._eatingMode = 'chew';
     this.setState(MONSTER_STATES.EATING);
   }
@@ -235,6 +265,21 @@ class Monster {
    */
   update(dt) {
     this._animTime += dt;
+
+    if (
+      this._holdExpression &&
+      this._holdMotionDuration != null &&
+      !this._motionFrozen
+    ) {
+      this._holdElapsed += dt;
+      if (this._holdElapsed >= this._holdMotionDuration) {
+        this._motionFrozen = true;
+        this._fx.scale = 1;
+        this._fx.y = 0;
+        this._fx.rotation = 0;
+      }
+    }
+
     const handler = this._handlers[this.state];
     if (handler && handler.update) {
       handler.update(dt);
@@ -292,6 +337,24 @@ class Monster {
    * - Full/error: rotación sutil
    */
   _updateMotionFx() {
+    if (this._motionFrozen) {
+      this._fx.scale = 1;
+      this._fx.y = 0;
+      this._fx.rotation = 0;
+      return;
+    }
+
+    // Neutral (y disgusto sostenido en final): sin bounce ni meneo.
+    if (
+      this.state === MONSTER_STATES.NEUTRAL ||
+      (this.state === MONSTER_STATES.FULL && this._holdExpression)
+    ) {
+      this._fx.scale = 1;
+      this._fx.y = 0;
+      this._fx.rotation = 0;
+      return;
+    }
+
     const pulse = 1 + Math.sin(this._animTime * 2.0) * 0.008;
     let scaleFx = pulse;
     let yFx = 0;
@@ -352,6 +415,11 @@ class Monster {
   _updateTimedExpression(dt, duration) {
     this._stateTimer += dt;
     if (this._stateTimer >= duration) {
+      if (this._holdExpression) {
+        // Pantalla final: reinicia el ciclo (p. ej. bounce HAPPY) sin ir a IDLE.
+        this._stateTimer = 0;
+        return;
+      }
       const cb = this._onExpressionComplete;
       this._onExpressionComplete = null;
       this.setState(MONSTER_STATES.IDLE);

@@ -65,15 +65,22 @@ function touchMoved() {
 
 /**
  * Atajos de teclado (desarrollo / operador):
+ * P → overlay de configuración (alimentos + mensajes finales)
  * F / ESC → pantalla completa
  * R → reiniciar todo
  * 1–5 → saltar a END con cada mensaje posible
- *   1: negativo (−3)  2: 0  3: aceptable (2)  4: bueno (5)  5: campeón (9)
  */
 function keyPressed() {
   if (game) {
     game.handleKey(key, keyCode);
   }
   // Evita scroll u otros defaults del navegador con algunas teclas.
+  return false;
+}
+
+function mouseWheel(event) {
+  if (game) {
+    game.handleWheel(event.delta);
+  }
   return false;
 }
