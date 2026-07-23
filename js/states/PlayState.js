@@ -156,17 +156,8 @@ class PlayState extends BaseState {
       return;
     }
 
-    const mouth = this.monster.getMouthPosition();
-    const radius = this.monster.getMouthAcceptRadius();
-    const dist = Math.hypot(food.x - mouth.x, food.y - mouth.y);
-
-    if (dist <= radius) {
-      // Sigue con boca abierta hasta que llega la comida y mastica.
-      this._acceptFood(food);
-    } else {
-      this.monster.stopExpectingFood();
-      food.returnToOrigin();
-    }
+    // Al soltar tras arrastrar: siempre come (vuela a la boca).
+    this._acceptFood(food);
   }
 
   /**
